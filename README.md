@@ -1,6 +1,7 @@
-**ROPSIR**
+***TAIGA** <br/>
+![alt text](https://upload.wikimedia.org/wikipedia/commons/2/29/Archangelsk_taiga.JPG) <br/>
 This software is made to find degenerate CRISPR-CAS9 gRNA targets in genome. It was developed a software to test 
-different modificated Cas9 types. Main aim of taiga is ... <br/>
+different modificated Cas9 types. <br/>
 **Software requirements:** <br/>
 *Linux system* (tested in Ubuntu 16.04, kernel version 4.15.0-30-generic, 64 cores, 1TB RAM) <br/>
 *Multicore* (8+) <br/>
@@ -9,8 +10,7 @@ different modificated Cas9 types. Main aim of taiga is ... <br/>
 *blastxmlparser* (install -  sudo apt-get install ruby ruby-dev; sudu apt-get install gem; sudo gem install blastxmlparser) <br/>
 *RNAfold* (install - sudo apt-add-repository ppa:j-4/vienna-rna; sudo apt-get update; sudo apt-get install vienna-rna) <br/>
 *ssconvert* (optional, converts csv file to xls, install - sudo apt-get install gnumeric) <br/>
-*gffread* (need to convert genome file to CDS sequences) - see https://github.com/gpertea/gffread <br/>
-
+*gffread* (need to convert genome file to CDS sequences) - see https://github.com/gpertea/gffread to install and compile. Gffread must be accessible from command prompt () <br/>
 
 **R packages: (will be installed automatically, by run install.R)** <br/>
 *Biostrings* <br/>
@@ -51,7 +51,7 @@ from "gene_id" column from gtf), character <br/>
 
 **Sample runs:** <br/>
 *git clone https://github.com/aprezvykh/taiga* <br/>
-*sudo install.R* <br/>
+*install.R* (don't run it by sudo!) <br/>
 
 1) Running taiga to find gRNAs in genome-wide mode (parsing genome file by regular expression, with flags -sm;-nm;-u;-p;-s and finding **all** gRNAs and their targets)  <br/>
 This mode can be run in protein-coding mode (-pc T), and all-genome mode (-pc F). This mode is very computational resource-demanding, and should be used in parallel (at least, in 32 threads), <br/>
@@ -66,7 +66,7 @@ This mode also can be run in protein-coding mode (-pc T), and all-genome mode (-
 *./self_tests.sh* <br/>
 
 Output of this script is table, that presented in csv and html format; it should look like: <br/>
-![alt text](https://github.com/aprezvykh/taiga/blob/master/sample_images/ropsir_image.PNG) <br/>
+![alt text](https://github.com/aprezvykh/taiga/blob/master/sample_images/_image.PNG) <br/>
 Column names explained: <br/>
 1) gRNA.id - id of guide RNA found <br/>
 2) gRNA.alignment.length - length of aligned guide RNA sequence <br/>
