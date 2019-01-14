@@ -1,4 +1,4 @@
-***TAIGA** <br/>
+**TAIGA** <br/>
 ![alt text](https://upload.wikimedia.org/wikipedia/commons/2/29/Archangelsk_taiga.JPG) <br/>
 This software is made to find degenerate CRISPR-CAS9 gRNA targets in genome. It was developed a software to test 
 different modificated Cas9 types. <br/>
