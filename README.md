@@ -66,7 +66,7 @@ This mode also can be run in protein-coding mode (-pc T), and all-genome mode (-
 *./self_tests.sh* <br/>
 
 Output of this script is table, that presented in csv and html format; it should look like: <br/>
-![alt text](https://github.com/aprezvykh/taiga/blob/master/sample_images/_image.PNG) <br/>
+![alt text](https://github.com/aprezvykh/taiga/blob/master/sample_images/ropsir_image.PNG) <br/>
 Column names explained: <br/>
 1) gRNA.id - id of guide RNA found <br/>
 2) gRNA.alignment.length - length of aligned guide RNA sequence <br/>
