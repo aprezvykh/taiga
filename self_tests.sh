@@ -1,5 +1,5 @@
 #!/bin/bash
-ropsir_dir=/mnt/raid/illumina/AlexR/git/taiga/
+taiga_dir=/mnt/raid/illumina/AlexR/git/taiga/
 exec_dir=$(readlink -e $(pwd))
 
 test1="$taiga_dir/./taiga.sh -g $taiga_dir/data/genome.fasta -a $taiga_dir/data/genome.gtf -t 32 -d T -pc T -o F -pr test.1"

@@ -6,6 +6,7 @@ library(parallel,warn.conflicts = FALSE,quietly = TRUE)
 library(plyr,warn.conflicts = FALSE,quietly = TRUE)
 library(dplyr,warn.conflicts = FALSE,quietly = TRUE)
 library(xtable,warn.conflicts = FALSE,quietly = TRUE)
+library(ggplot2,warn.conflicts = FALSE,quietly = TRUE)
 
 args <- commandArgs()
 
@@ -32,15 +33,16 @@ cat(paste("Non-seed mismatch number is", non.seed.mismatch, sep = " "),sep = "\n
 cat(paste("Protein coding is", protein.coding, sep = " "),sep = "\n")
 cat(paste("Tested gene name is", test.gene, sep = " "),sep = "\n")
 
-#dir <- c("~/ropsir.TESTING/")
-#gtf.path <- c("~/git/ropsir/data/genome.gtf")
+###DEBUGGER OPTS
+#dir <- c("~/taiga.TESTING/")
+#gtf.path <- c("~/git/taiga/data/genome.gtf")
 #prefix <- c("test.3")
 #threads <- 32
 #seed.mismatch <- 2
 #non.seed.mismatch <- 4
-#protein.coding <- "T"
-#test.gene <- "YAL005C"
-#paralogs <- "T"
+#protein.coding <- "F"
+#test.gene <- "nogene"
+#paralogs <- "F"
 
 
 cl <- makeCluster(threads,type = "FORK")
@@ -168,48 +170,14 @@ energies$name <- spacer.seqs$headers
 names(energies) <- c("val", "name")
 
 if(identical(tolower(paralogs), "t")){
-    names(df) <- c("qseqid",
-                   "sseqid",
-                   "pident",
-                   "length",
-                   "mismatch",
-                   "gapopen", 
-                   "qstart", 
-                   "qend", 
-                   "sstart", 
-                   "send", 
-                   "evalue", 
-                   "bitscore",
-                   "aa",
-                   "bb",
-                   "cc",
-                   "dd",
-                   "ee",
-                   "seq",
-                   "sticks",
-                   "target")
+    names(df) <- c("qseqid", "sseqid", "pident", "length", "mismatch", "gapopen", 
+                   "qstart", "qend", "sstart", "send", "evalue", "bitscore",
+                   "aa","bb", "cc", "dd", "ee", "seq", "sticks", "target")
 } else if(identical(tolower(paralogs), "f")){
-
-    names(df) <- c("qseqid",
-                   "sseqid",
-                   "pident",
-                   "length",
-                   "mismatch",
-                   "gapopen", 
-                   "qstart", 
-                   "qend", 
-                   "sstart", 
-                   "send", 
-                   "evalue", 
-                   "bitscore",
-                   "aa",
-                   "bb",
-                   "cc",
-                   "dd",
-                   "ee",
-                   "seq",
-                   "sticks")
-
+  names(df) <- c("qseqid", "sseqid", "pident", "length", "mismatch", "gapopen", 
+                 "qstart", "qend", "sstart", "send", "evalue", "bitscore",
+                 "aa","bb", "cc", "dd", "ee", "seq", "sticks")
+  
 }
 
 if(identical(tolower(paralogs), "t")){
@@ -273,27 +241,6 @@ final.df$dd <- NULL
 
 
 final.df$gc.content <- as.numeric(as.character(unlist(lapply(as.character(final.df$pam.fasta), letter.freq))))
- 
-if(identical(tolower(paralogs), "t")){
-  final.df$mismatch <- NULL
-  final.df$gapopen <- NULL
-  final.df$evalue <- NULL
-  final.df$qstart <- NULL
-  final.df$qend <- NULL
-  final.df$sticks <- NULL
-  final.df$pident <- NULL
-  final.df$loc <- NULL
-  big.final <- final.df
-  names(big.final) <- c("gRNA.id","gene.id","gRNA.alignment.length", "gRNA.alignment.start",
-                        "gRNA.alignment.end", "bitscore", "evalue", "aligned.sequence", "target", "cigar.string", "total.mismatch.N",
-                        "mismatch.position", "validation", "gRNA.energy", "PAM.sequence", "GC.content")
-  write.csv(big.final, paste(prefix, "-results.csv", sep = ""))
-  big.final.for.html <- big.final
-  big.final.for.html[,1] <- NULL
-  write.table(big.final.for.html, paste(prefix, "-results.tsv", sep = ""),quote = F,sep = "\t")
-  stopCluster(cl = cl)
-  exit()
-}
 
 ###parsing final data frame
 if(identical(test.gene, "nogene")){
@@ -310,17 +257,19 @@ if(identical(test.gene, "nogene")){
       order.highest <- as.character(data.frame(table(t(final.df$qseqid)))[order(data.frame(table(t(final.df$qseqid)))$Freq, decreasing = T),]$Var1)
       big.final <- data.frame()
       for(f in order.highest){
-        cat(f, sep = "\n")
         df <- final.df[final.df$qseqid == f,]
+        df <- df[order(df$total.mm, decreasing = F),]
+        df$num.full.genes <- length(unique(df[df$recon.cigar == "|||||||||||||||||||||||",]$sseqid))
+        df$diff.mut <- length(unique(df$recon.cigar)) -1
         big.final <- rbind(df, big.final)
+        
       }
       
       big.final <- big.final[seq(dim(big.final)[1],1),]
       names(big.final) <- c("gRNA.id","gene.id","gRNA.alignment.length", "gRNA.alignment.start",
-                            "gRNA.alignment.end", "bitscore", "evalue", "aligned.sequence", "cigar.string", "total.mismatch.N",
-                            "mismatch.position", "validation", "gRNA.energy", "PAM.sequence", "GC.content")
-      #big.final$PAM.sequence <- as.character(big.final$PAM.sequence)
-      #big.final$GC.content <- as.character(unlist(lapply(big.final$PAM.sequence, letter.freq)))
+                            "gRNA.alignment.end", "bitscore", "evalue", "aligned.sequence", "cigar.string", 
+                            "total.mismatch.N", "mismatch.position", "validation", "gRNA.energy", "PAM.sequence", 
+                            "GC.content", "Number.of.genes.with.full.match", "Number.of.different.mutation.locations")
     } else if (tolower(protein.coding) == "f") {
       final.df$mismatch <- NULL
       final.df$gapopen <- NULL
@@ -336,41 +285,92 @@ if(identical(test.gene, "nogene")){
       final.df$send <- NULL
       final.df$sticks <- NULL
       cat("Ordering data frame...", sep = "\n")
-      order.highest <- data.frame(table(t(final.df$qseqid)))[order(data.frame(table(t(final.df$qseqid)))$Freq, decreasing = T),]$Var1
+      order.highest <- as.character(data.frame(table(t(final.df$qseqid)))[order(data.frame(table(t(final.df$qseqid)))$Freq, decreasing = T),]$Var1)
       big.final <- data.frame()
       for(f in order.highest){
-        cat(f, sep = "\n")
         df <- final.df[final.df$qseqid == f,]
+        df <- df[order(df$total.mm, decreasing = F),]
+        df$num.full.genes <- length(unique(df[df$recon.cigar == "|||||||||||||||||||||||",]$loc))
+        df$diff.mut <- length(unique(df$recon.cigar)) -1
         big.final <- rbind(df, big.final)
+        
       }
+      
       big.final <- big.final[seq(dim(big.final)[1],1),]
       names(big.final) <- c("gRNA.id","gRNA.alignment.length", "bitscore", "evalue",
                             "aligned.sequence", "cigar.string", "total.mismatch.N",
-                            "mismatch.position", "validation", "Locus", "gRNA.energy", "PAM.sequence", "GC.content", "Genome.cordinate")
+                            "mismatch.position", "validation", "Locus", "gRNA.energy", 
+                            "PAM.sequence", "GC.content", "Genome.cordinate", 
+                            "Number.of.genes.with.full.match", "Number.of.different.mutation.locations")
       big.final$PAM.sequence <- as.character(big.final$PAM.sequence)
       big.final$GC.content <- as.character(unlist(lapply(big.final$PAM.sequence, letter.freq)))
     }
 }
 
-
 write.csv(big.final, paste(prefix, "-results.csv", sep = ""))
 html.filename <- paste(files.dir, "/", prefix, "-output.html", sep = "")
-print(html.filename)
-cat("Saving output to HTML table!")
+cat("Saving output to HTML table!", sep = "\n")
 sink(html.filename)
 print(xtable(big.final), type = "html")
 sink()
 
 ###report
 if(identical(tolower(paralogs), "f")){
-  top.grnas <- as.character(unique(big.final$gRNA.id)[1:20])  
-  big.final.cutted <- big.final[big.final$gRNA.id %in% top.grnas,]
-  write.csv(big.final.cutted, paste(prefix, "-cutted-results.csv", sep = ""))
-  cat("Converting to XLS! (ssconvert warning about X11 display is non-crucial, just skip it :) )", sep = "\n")
-  system(paste("ssconvert ", prefix, "-cutted-results.csv ", prefix, "-cutted-results.xls", sep = ""))
+  top.20.grnas <- as.character(unique(big.final$gRNA.id)[1:20])  
+  big.final.cutted.20 <- big.final[big.final$gRNA.id %in% top.20.grnas,]
+  write.csv(big.final.cutted.20, paste(prefix, "top20-cutted-results.csv", sep = ""))
+  
+  top.50.grnas <- as.character(unique(big.final$gRNA.id)[1:50])  
+  big.final.cutted.50 <- big.final[big.final$gRNA.id %in% top.50.grnas,]
+  write.csv(big.final.cutted.50, paste(prefix, "top50-cutted-results.csv", sep = ""))
+  
+  top.200.grnas <- as.character(unique(big.final$gRNA.id)[1:200])  
+  big.final.cutted.200 <- big.final[big.final$gRNA.id %in% top.200.grnas,]
+  write.csv(big.final.cutted.200, paste(prefix, "top200-cutted-results.csv", sep = ""))
+  
+  cat("Converting to XLS", sep = "\n")
+  system(paste("ssconvert ", prefix, "top20-cutted-results.csv ", prefix, "top20-cutted-results.xls 2> /dev/null", sep = ""))
+  system(paste("ssconvert ", prefix, "top50-cutted-results.csv ", prefix, "top50-cutted-results.xls 2> /dev/null", sep = ""))
+  system(paste("ssconvert ", prefix, "top200-cutted-results.csv ", prefix, "top200-cutted-results.xls 2> /dev/null", sep = ""))
+  
+  system("rm *-cutted-results.csv")
+}
+
+
+cat("Picking best gRNAs!", sep = "\n")
+v.sorted <- sort(unique(big.final$Number.of.different.mutation.locations))
+best.grna.df <- big.final[which(big.final$Number.of.different.mutation.locations == max(big.final$Number.of.different.mutation.locations) & 
+                  big.final$Number.of.genes.with.full.match == 1),]
+write.csv(best.grna.df, paste(prefix, "best_gRNA-results.csv", sep = ""))
+system(paste("ssconvert ", prefix, "best_gRNA-results.csv ", prefix, "top200-cutted-results.xls 2> /dev/null", sep = ""))
+system(paste("rm ", prefix, "best_gRNA-results.csv", sep = ""))
+
+cat("Making graphic report!", sep = "\n")
+if(identical(tolower(protein.coding), "f")){
+    pdf(paste(prefix, "-graphic-report.pdf", sep = ""))
+    top.genes <- as.data.frame(table(t(big.final$Locus)))
+    top.genes <- top.genes[order(top.genes$Freq,decreasing = T),][1:10,]
+    g <- ggplot(data = top.genes) + geom_bar(aes(x = reorder(Var1, -Freq), y = Freq), stat = "identity") + 
+      theme_bw() + ggtitle("Top-10 genes with gRNAs hit") + 
+      scale_x_discrete("Gene") + scale_y_continuous("Number of hits")
+    print(g)
+    plot(density(as.numeric(big.final$GC.content)), main = "GC content density")
+    plot(density(as.numeric(big.final$gRNA.energy)), main = "gRNA free energy density")
+    dev.off()
+} else if(identical(tolower(protein.coding), "t")){
+  pdf(paste(prefix, "-graphic-report.pdf", sep = ""))
+  top.genes <- as.data.frame(table(t(big.final$gene.id)))
+  top.genes <- top.genes[order(top.genes$Freq,decreasing = T),][1:10,]
+  g <- ggplot(data = top.genes) + geom_bar(aes(x = reorder(Var1, -Freq), y = Freq), stat = "identity") + 
+    theme_bw() + ggtitle("Top-10 genes with gRNAs hit") + 
+    scale_x_discrete("Gene") + scale_y_continuous("Number of hits")
+  print(g)
+  plot(density(as.numeric(big.final$GC.content)), main = "GC content density")
+  plot(density(as.numeric(big.final$gRNA.energy)), main = "gRNA free energy density")
+  dev.off()
 }
 
 stopCluster(cl = cl)
-
+cat("Done!", sep = "\n")
 
 

@@ -24,7 +24,8 @@ NC='\033[0m'
 #echo "-o|--paralogs - search for paralogs?"
 #echo "-h|--help - display help message and exit"
 
-banner ROPSIR
+banner TAIGA
+debug_n=1000
 POSITIONAL=()
 while [[ $# -gt 0 ]]
 do
@@ -533,7 +534,7 @@ if [[ $ngg_length -eq 0 ]]
 if [ $debug = "T" ] || [ $debug = "t" ]
 	then
 		echo "Debug mode is true, cutting $all_ngg_sequences"
-		head -n 50 $all_ngg_sequences > $all_ngg_sequences_dbg
+		head -n $debug_n $all_ngg_sequences > $all_ngg_sequences_dbg
 	elif [[ $debug -eq "F" ]]
 		then
 			echo "Debug mod off! Do nothing!"
@@ -600,7 +601,6 @@ RNAfold $final_spacers --noPS | grep "\\." | sed 's/[^ ]* //' | sed 's/)//' | se
 
 echo "Executing final R script!"
 echo "$script_dir/./parse_tsv.R $(pwd) $annotation_file $prefix $threads $seed_mismatch $non_seed_mismatch $protein_coding_only $test_gene $curr_exec_dir $script_dir $paralogs" 
-
 $script_dir/./parse_tsv.R $(pwd) $annotation_file $prefix $threads $seed_mismatch $non_seed_mismatch $protein_coding_only $test_gene $curr_exec_dir $script_dir $paralogs
 echo "Done! Purging..."
 
