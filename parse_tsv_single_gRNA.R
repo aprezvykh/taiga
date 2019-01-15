@@ -1,10 +1,12 @@
 #!/usr/bin/Rscript
+shhh <- suppressPackageStartupMessages 
+shhh(library(rtracklayer, warn.conflicts = FALSE, quietly = TRUE))
+shhh(library(stringr, warn.conflicts = FALSE, quietly = TRUE))
+shhh(library(parallel, warn.conflicts = FALSE, quietly = TRUE))
+shhh(library(plyr, warn.conflicts = FALSE, quietly = TRUE))
+shhh(library(dplyr, warn.conflicts = FALSE, quietly = TRUE))
+
 args <- commandArgs()
-library(rtracklayer)
-library(stringr)
-library(parallel)
-library(plyr)
-library(dplyr)
 
 exit <- function() {
   .Internal(.invokeRestart(list(NULL, NULL), NULL))
@@ -19,18 +21,27 @@ seed.mismatch <- args[10]
 non.seed.mismatch <- args[11]
 protein.coding <- args[12]
 
-#dir <- "~/ropsir.TESTING/"
-#gtf.path <- "~/git/ropsir/data/genome.gtf"
-#prefix <- "test.4"
-#threads <- 32
-#seed.mismatch <- 2
-#non.seed.mismatch <- 4
-#protein.coding <- "F"
+debug = F
+
+if(debug == T){
+  dir <- c("~/taiga.TESTING/")
+  gtf.path <- c("~/git/taiga/data/genome.gtf")
+  prefix <- c("test.3")
+  threads <- 32
+  seed.mismatch <- 2
+  non.seed.mismatch <- 4
+  protein.coding <- "F"
+  test.gene <- "nogene"
+  paralogs <- "F"
+}
 
 seed.mismatch <- as.numeric(seed.mismatch)
 non.seed.mismatch <- as.numeric(non.seed.mismatch)
 ###
+cat("Starting cluster", sep = "\n")
 cl <- makeCluster(threads,type = "FORK")
+cat("Cluster started!", sep = "\n")
+
 setwd(dir)
 
 print(paste("Using", threads, "threads!"))
@@ -114,24 +125,10 @@ spacer.seqs$headers <- gsub(">", "", spacer.seqs$headers)
 energies$name <- spacer.seqs$headers
 names(energies) <- c("val", "name")
 
-names(df) <- c("qseqid",
-               "sseqid",
-               "pident",
-               "length",
-               "mismatch",
-               "gapopen", 
-               "qstart", 
-               "qend", 
-               "sstart", 
-               "send", 
-               "evalue", 
-               "bitscore",
-               "aa",
-               "bb",
-               "cc",
-               "dd",
-               "ee",
-               "seq",
+names(df) <- c("qseqid", "sseqid", "pident", "length", 
+               "mismatch", "gapopen", "qstart", "qend", 
+               "sstart", "send", "evalue", "bitscore",
+               "aa", "bb", "cc", "dd", "ee", "seq",
                "sticks")
 df$ee <- NULL
 
@@ -168,25 +165,30 @@ final.df <- rbind(sa, final.df)
 final.df <- final.df[grep("XXX$|XX$", final.df$recon.cigar, invert = T),]
 final.df$mm.pos <- gsub("-1", "0", final.df$mm.pos)
 
-final.df$aa <- NULL
-final.df$bb <- NULL
-final.df$cc <- NULL
-final.df$dd <- NULL
+for(i in c("aa", "bb", "cc", "dd")){
+  final.df[[i]] <- NULL
+}
 
 final.df$coord <- paste(final.df$sseqid, ":",final.df$sstart, "-", final.df$send, sep = "")
-final.df$pident <- NULL
-final.df$length <- NULL
-final.df$mismatch <- NULL
-final.df$qstart <- NULL
-final.df$qend <- NULL
-final.df$sstart <- NULL
-final.df$send <- NULL
-final.df$sticks <- NULL
-final.df$gapopen <- NULL
+
+for(i in c("pident", "length", "mismatch", "qstart",
+           "qend", "sstart", "send", "sticks", 
+           "gapopen")){
+  final.df[[i]] <- NULL
+}
 
 names(final.df) <- c("gRNA.id", "chr", "evalue", "bitscore",
                      "Aligned.sequence", "cigar.string", "total.mismatch.N", "mismatch.position",
                      "validation", "Locus", "gRNA.energy", "PAM.sequence", "GC.content", "Genomic.coordinate")
+
+final.df <- final.df[order(final.df$total.mismatch.N,decreasing = F),]
+final.df$Number.of.genes.with.full.match <- length(unique(final.df[final.df$cigar.string == "|||||||||||||||||||||||"]$Locus))
+final.df$Number.of.different.mutation.locations <- length(unique(final.df$cigar.string))
+
+write.csv(final.df, paste(prefix, "-single-gRNA-results.csv", sep = ""))
+system(paste("ssconvert ", prefix, "-single-gRNA-results.csv ", prefix, "-single-gRNA-results.xls 2> /dev/null", sep = ""))
+stopCluster(cl = cl)
+cat("Done!", sep = "\n")
 
 write.csv(final.df, paste(prefix, "-single-gRNA-results.csv", sep = ""))
 stopCluster(cl = cl)

@@ -121,6 +121,11 @@ case $key in
     shift
     shift
     ;;
+    -st|--stain)
+    stain="$2"
+    shift
+    shift
+    ;;
 
 esac
 done
@@ -600,8 +605,9 @@ echo "Executing RNAfold!"
 RNAfold $final_spacers --noPS | grep "\\." | sed 's/[^ ]* //' | sed 's/)//' | sed 's/(//' > energies.txt
 
 echo "Executing final R script!"
-echo "$script_dir/./parse_tsv.R $(pwd) $annotation_file $prefix $threads $seed_mismatch $non_seed_mismatch $protein_coding_only $test_gene $curr_exec_dir $script_dir $paralogs" 
-$script_dir/./parse_tsv.R $(pwd) $annotation_file $prefix $threads $seed_mismatch $non_seed_mismatch $protein_coding_only $test_gene $curr_exec_dir $script_dir $paralogs
+echo "$script_dir/./parse_tsv.R $(pwd) $annotation_file $prefix $threads $seed_mismatch $non_seed_mismatch $protein_coding_only $test_gene $curr_exec_dir $script_dir $paralogs $stain"
+exit 0
+$script_dir/./parse_tsv.R $(pwd) $annotation_file $prefix $threads $seed_mismatch $non_seed_mismatch $protein_coding_only $test_gene $curr_exec_dir $script_dir $paralogs $stain
 echo "Done! Purging..."
 
 if [[ $protein_coding_only = "T" ]] || [[ $protein_coding_only = "t" ]];
@@ -611,10 +617,3 @@ if [[ $protein_coding_only = "T" ]] || [[ $protein_coding_only = "t" ]];
 		then
 			rm $curr_exec_dir/blast.* $curr_exec_dir/ngg.headers.fasta $curr_exec_dir/potential_dbg_ngg.fasta  $curr_exec_dir/potential_ngg.fasta $curr_exec_dir/potential_ngg.fasta.parsed $curr_exec_dir/energies.txt
 fi
-
-
-#echo "Converting to XLS! (ssconvert warning about X11 display is non-crucial, just skip it :) )"
-#if [[ $is_ssconvert -eq 1 ]]
-#	then
-#		ls *.csv | parallel 'ssconvert {} {.}.xls'
-#fi

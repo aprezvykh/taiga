@@ -1,12 +1,13 @@
 #!/usr/bin/Rscript
-library(Rcpp, warn.conflicts = FALSE, quietly = TRUE)
-library(rtracklayer,warn.conflicts = FALSE,quietly = TRUE)
-library(stringr,warn.conflicts = FALSE,quietly = TRUE)
-library(parallel,warn.conflicts = FALSE,quietly = TRUE)
-library(plyr,warn.conflicts = FALSE,quietly = TRUE)
-library(dplyr,warn.conflicts = FALSE,quietly = TRUE)
-library(xtable,warn.conflicts = FALSE,quietly = TRUE)
-library(ggplot2,warn.conflicts = FALSE,quietly = TRUE)
+shhh <- suppressPackageStartupMessages 
+shhh(library(Rcpp, warn.conflicts = FALSE, quietly = TRUE))
+shhh(library(rtracklayer,warn.conflicts = FALSE,quietly = TRUE))
+shhh(library(stringr,warn.conflicts = FALSE,quietly = TRUE))
+shhh(library(parallel,warn.conflicts = FALSE,quietly = TRUE))
+shhh(library(plyr,warn.conflicts = FALSE,quietly = TRUE))
+shhh(library(dplyr,warn.conflicts = FALSE,quietly = TRUE))
+shhh(library(xtable,warn.conflicts = FALSE,quietly = TRUE))
+shhh(library(ggplot2,warn.conflicts = FALSE,quietly = TRUE))
 
 args <- commandArgs()
 
@@ -21,6 +22,7 @@ test.gene <- args[13]
 files.dir <- args[14]
 ropsir.dir <- args[15]
 paralogs <- args[16]
+stain <- args[17]
 
 seed.mismatch <- as.numeric(seed.mismatch)
 non.seed.mismatch <- as.numeric(non.seed.mismatch)
@@ -33,19 +35,39 @@ cat(paste("Non-seed mismatch number is", non.seed.mismatch, sep = " "),sep = "\n
 cat(paste("Protein coding is", protein.coding, sep = " "),sep = "\n")
 cat(paste("Tested gene name is", test.gene, sep = " "),sep = "\n")
 
-###DEBUGGER OPTS
-#dir <- c("~/taiga.TESTING/")
-#gtf.path <- c("~/git/taiga/data/genome.gtf")
-#prefix <- c("test.3")
-#threads <- 32
-#seed.mismatch <- 2
-#non.seed.mismatch <- 4
-#protein.coding <- "F"
-#test.gene <- "nogene"
-#paralogs <- "F"
+debug = T
+
+if(debug == T){
+    dir <- c("~/taiga.TESTING/")
+    gtf.path <- c("~/git/taiga/data/genome.gtf")
+    prefix <- c("test.3")
+    threads <- 32
+    seed.mismatch <- 2
+    non.seed.mismatch <- 4
+    protein.coding <- "F"
+    test.gene <- "nogene"
+    paralogs <- "F"
+    stain <- "yeast"
+}
 
 
+spec.df <- data.frame(db = c("org.Sc.sgd.db", "org.Mm.eg.db" ,"org.Hs.eg.db", "org.Rn.eg.db", "org.Dm.eg.db", "org.Ce.eg.db"),
+                      spec = c("yeast", "mouse", "human", "rat", "fly", "worm"),
+                      stringsAsFactors = F)
+
+if(!is.na(stain)){
+  cat(paste("Annotation stain is set to", stain), sep = "\n")
+  cat(paste("Loading", stain), sep = "\n")
+  instdb <- spec.df[spec.df$spec == stain,]$db
+  shhh(library(paste0(instdb), warn.conflicts = FALSE,quietly = TRUE,character.only = T))
+}
+
+
+
+cat("Starting cluster", sep = "\n")
 cl <- makeCluster(threads,type = "FORK")
+cat("Cluster started!", sep = "\n")
+
 setwd(dir)
 
 if(identical(tolower(paralogs), "f")){
@@ -215,7 +237,6 @@ cat("parsing annotation file. This can take a while...", sep = "\n")
 df$loc <- parApply(cl = cl, X = df, MARGIN = 1, FUN = get.loci)
 cat("Constructing final data frame!", sep = "\n")
 
-
 grna.ids <- unique(df[["qseqid"]])
 clusterExport(cl,varlist = list("df", "grna.ids", "energies", "spacer.seqs", "letter.freq"))
 ll <- parLapply(cl = cl, X = grna.ids, fun = construct.final.df)
@@ -233,26 +254,20 @@ if(identical(test.gene, "nogene")){
   cat(paste(nrow(final.df), "gRNAs found for your gene!", sep = " "),sep = "\n")
 } 
 
-
-final.df$aa <- NULL
-final.df$bb <- NULL
-final.df$cc <- NULL
-final.df$dd <- NULL
-
+for(i in c("aa", "bb", "cc", "dd")){
+  final.df[[i]] <- NULL
+}
 
 final.df$gc.content <- as.numeric(as.character(unlist(lapply(as.character(final.df$pam.fasta), letter.freq))))
 
 ###parsing final data frame
 if(identical(test.gene, "nogene")){
     if(tolower(protein.coding) == "t"){
-      final.df$mismatch <- NULL
-      final.df$gapopen <- NULL
-      final.df$evalue <- NULL
-      final.df$qstart <- NULL
-      final.df$qend <- NULL
-      final.df$sticks <- NULL
-      final.df$pident <- NULL
-      final.df$loc <- NULL
+      for(i in c("mismatch", "gapopen", "evalue", "qstart",
+                 "qend", "sticks", "pident", "loc")){
+        final.df[[i]] <- NULL
+      }
+      
       cat("Ordering data frame...", sep = "\n")
       order.highest <- as.character(data.frame(table(t(final.df$qseqid)))[order(data.frame(table(t(final.df$qseqid)))$Freq, decreasing = T),]$Var1)
       big.final <- data.frame()
@@ -271,19 +286,12 @@ if(identical(test.gene, "nogene")){
                             "total.mismatch.N", "mismatch.position", "validation", "gRNA.energy", "PAM.sequence", 
                             "GC.content", "Number.of.genes.with.full.match", "Number.of.different.mutation.locations")
     } else if (tolower(protein.coding) == "f") {
-      final.df$mismatch <- NULL
-      final.df$gapopen <- NULL
-      final.df$evalue <- NULL
-      final.df$qstart <- NULL
-      final.df$qend <- NULL
-      final.df$sticks <- NULL
-      final.df$pident <- NULL
       final.df$coord <- paste(final.df$sseqid, ":", final.df$sstart, "-", final.df$send, sep = "")
-      #final.df$coord <- NULL
-      final.df$sseqid <- NULL
-      final.df$sstart <- NULL
-      final.df$send <- NULL
-      final.df$sticks <- NULL
+      for(i in c("mismatch", "gapopen", "evalue", "qstart",
+                 "qend", "sticks", "pident", "sseqid", 
+                 "sstart", "send")){
+        final.df[[i]] <- NULL
+      }
       cat("Ordering data frame...", sep = "\n")
       order.highest <- as.character(data.frame(table(t(final.df$qseqid)))[order(data.frame(table(t(final.df$qseqid)))$Freq, decreasing = T),]$Var1)
       big.final <- data.frame()
@@ -370,7 +378,12 @@ if(identical(tolower(protein.coding), "f")){
   dev.off()
 }
 
+
 stopCluster(cl = cl)
 cat("Done!", sep = "\n")
+
+
+
+
 
 
