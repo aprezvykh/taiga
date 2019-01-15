@@ -70,8 +70,8 @@ This mode also can be run in protein-coding mode (-pc T), and all-genome mode (-
 **Output files:** <br/>
 Output of this script in genome-wide mode is presented with several files: <br/>
 1) *prefix-graphic-report.pdf* <br/>
-2) *prefix-results.csv (full table* in CSV format, useful for analysis in R/Python)  <br/>
-3) *prefix-output.html (full table* in HTML format) <br/>
+2) *prefix-results.csv* (full table in CSV format, useful for analysis in R/Python)  <br/>
+3) *prefix-output.html* (full table in HTML format) <br/>
 4) *prefixtop20-cutted-results.xls* (top-20 gRNAs) <br/>
 5) *prefixtop50-cutted-results.xls* (top-50 gRNAs)<br/>
 6) *prefixtop200-cutted-results.xls* (top-200 gRNAs) <br/>
