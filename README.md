@@ -28,7 +28,7 @@ different modificated Cas9 types. <br/>
 -u - sequence that not allowed in spacer sequence (TTT, by default), string <br/>
 -p - PAM sequence, that unallowed (AA, by default), string <br/>
 -t - threads number, integer <br/>
--w - size of the word in blast, integer (10 by default, for debugging purposes only) <br/>
+-w - size of the word in blast, integer (10 by default, **for debugging purposes only**) <br/>
 -d - uses only first 10 PAM sequences (T/F), bool <br/>
 -pr - prefix for output csv file (string, date by default) <br/>
 -sm - number of mismatches in seed region, integer (2 by default) <br/>
@@ -36,9 +36,9 @@ different modificated Cas9 types. <br/>
 -tg - test specific gRNA sequence to find targets (GATTATAATATTCCTTGTGTTAG, for example), string <br/>
 -pc - use only protein-coding sequences, ignore intergenic region (T/F), bool <br/>
 -ts - test specific gene to find gRNA for its sequence (gene identifyer format should be <br/>
-from "gene_id" column from gtf), character <br/>
--o - search for paralogs for gene (T/F) - works with -ts option, script will try to find paralogs for gene specifyed in -ts option <br/>
--c - paralogs cutoff (evalue scoring cutoff for paralogs blast) - float, 0.05 by default (should be set greater then 0.05, if you cannot find paralogs in paralog search mode) <br/>
+from "gene_id" column from gtf) (**NOW UNDER DEVELOPMENT**), character <br/>
+-o - search for paralogs for gene (T/F) - works with -ts option, script will try to find paralogs for gene specifyed in -ts option (**NOW UNDER DEVELOPMENT, SHOULD BE ALWAYS FALSE**) <br/>
+-c - paralogs cutoff (evalue scoring cutoff for paralogs blast) - float, 0.05 by default (should be set greater then 0.05, if you cannot find paralogs in paralog search mode) (**NOW UNDER DEVELOPMENT**) <br/>
 
 
 **Minimum required arguments**
@@ -65,8 +65,19 @@ This mode also can be run in protein-coding mode (-pc T), and all-genome mode (-
 3) To run all tests, just run:  <br/>
 *./self_tests.sh* <br/>
 
-Output of this script is table, that presented in csv and html format; it should look like: <br/>
-![alt text](https://github.com/aprezvykh/taiga/blob/master/sample_images/_image.PNG) <br/>
+**Sample runs:** <br/>
+Output of this script in genome-wide mode is presented with several files: <br/>
+1) prefix-graphic-report.pdf <br/>
+2) test1-results.csv (full table in CSV format, useful for analysis in R/Python)  <br/>
+3) test1-output.html (full table in HTML format) <br/>
+4) test1top20-cutted-results.xls (top-20 gRNAs) <br/>
+5) test1top50-cutted-results.xls (top-50 gRNAs)<br/>
+6) test1top200-cutted-results.xls (top-200 gRNAs) <br/>
+
+Output of this script in single gRNA-testing mode: <br/>
+prefix-single-gRNA.xlsx  <br/>
+___
+
 Column names explained: <br/>
 1) gRNA.id - id of guide RNA found <br/>
 2) gRNA.alignment.length - length of aligned guide RNA sequence <br/>
@@ -81,7 +92,7 @@ Column names explained: <br/>
 11) gRNA.Energy - free fold energy of guide RNA <br/>
 12) GC.content - GC content :) <br/>
 13) Genomic.coordinate - genomic coordinate in alignment <br/>
-
+___
 
 If you found an issue, please, report it in current repository or email me: <br/>
 *aprezvykh@yandex. ru*
