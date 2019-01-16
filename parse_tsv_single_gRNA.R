@@ -20,9 +20,10 @@ threads <- args[9]
 seed.mismatch <- args[10]
 non.seed.mismatch <- args[11]
 protein.coding <- args[12]
-stain = args[13]
+stain <- args[13]
 
-debug = F
+debug = T
+
 if(debug == T){
   dir <- c("~/taiga.TESTING/")
   gtf.path <- c("~/git/taiga/data/genome.gtf")
@@ -33,6 +34,7 @@ if(debug == T){
   protein.coding <- "F"
   test.gene <- "nogene"
   paralogs <- "F"
+  stain <- "yeast"
 }
 
 spec.df <- data.frame(db = c("org.Sc.sgd.db", "org.Mm.eg.db" ,"org.Hs.eg.db", "org.Rn.eg.db", "org.Dm.eg.db", "org.Ce.eg.db"),
@@ -63,7 +65,6 @@ cat(paste("Using", threads, "threads!"), sep = "\n")
 tab <- read.delim("blast.outfmt6",header = F,stringsAsFactors = F)
 pam <- read.delim("blast.tsv",header = F, stringsAsFactors = F)
 df <- bind_cols(tab,pam)
-nrow(df) < 1
 
 if(nrow(df) < 2){
   cat("Check your gRNA! No hits found!", sep = "\n")
@@ -175,9 +176,13 @@ sa <- data.frame(sa, stringsAsFactors = F)
 sa$gc.content <- letter.freq(unique(as.character(sa$pam.fasta)))
 final.df <- rbind(sa, final.df)
 
-
 final.df <- final.df[grep("XXX$|XX$", final.df$recon.cigar, invert = T),]
 final.df$mm.pos <- gsub("-1", "0", final.df$mm.pos)
+
+if(nrow(final.df < 2)){
+  cat("Cannot found any valid gRNA! exitting!", sep = "\n")
+  exit()
+}
 
 for(i in c("aa", "bb", "cc", "dd")){
   final.df[[i]] <- NULL

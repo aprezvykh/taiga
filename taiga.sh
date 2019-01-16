@@ -477,7 +477,8 @@ if [[ ! -z "$test_grna" ]]
 		$script_dir/./blastxml_to_tabular.py blast.xml > blast.outfmt6
 		blastxmlparser --threads $threads -n 'hit.score, hsp.evalue, hsp.qseq, hsp.midline' blast.xml > blast.tsv
 		RNAfold $testgrna_file --noPS | grep ". (" | awk '{print $3}' | sed 's/)//' > energies.txt
-		$script_dir/./parse_tsv_single_gRNA.R $(pwd) $annotation_file $prefix $threads $seed_mismatch $non_seed_mismatch $protein_coding $stain
+		echo "$script_dir/./parse_tsv_single_gRNA.R $(pwd) $annotation_file $prefix $threads $seed_mismatch $non_seed_mismatch $protein_coding_only $stain"
+		$script_dir/./parse_tsv_single_gRNA.R $(pwd) $annotation_file $prefix $threads $seed_mismatch $non_seed_mismatch $protein_coding_only $stain
 		echo "Done! Purging..."
 		rm $curr_exec_dir/blast.xml $curr_exec_dir/blast.tsv $curr_exec_dir/blast.outfmt6 $curr_exec_dir/energies.txt $curr_exec_dir/testgrna.fasta $curr_exec_dir/genome_cds.fasta $curr_exec_dir/genome_cds.fasta.fai
 		ls *.csv | parallel 'ssconvert {} {.}.xls'
