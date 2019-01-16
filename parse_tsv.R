@@ -8,6 +8,7 @@ shhh(library(plyr,warn.conflicts = FALSE,quietly = TRUE))
 shhh(library(dplyr,warn.conflicts = FALSE,quietly = TRUE))
 shhh(library(xtable,warn.conflicts = FALSE,quietly = TRUE))
 shhh(library(ggplot2,warn.conflicts = FALSE,quietly = TRUE))
+shhh(library(AnnotationDbi,warn.conflicts = FALSE,quietly = TRUE))
 
 args <- commandArgs()
 
@@ -35,7 +36,7 @@ cat(paste("Non-seed mismatch number is", non.seed.mismatch, sep = " "),sep = "\n
 cat(paste("Protein coding is", protein.coding, sep = " "),sep = "\n")
 cat(paste("Tested gene name is", test.gene, sep = " "),sep = "\n")
 
-debug = T
+debug = F
 
 if(debug == T){
     dir <- c("~/taiga.TESTING/")
@@ -55,11 +56,13 @@ spec.df <- data.frame(db = c("org.Sc.sgd.db", "org.Mm.eg.db" ,"org.Hs.eg.db", "o
                       spec = c("yeast", "mouse", "human", "rat", "fly", "worm"),
                       stringsAsFactors = F)
 
-if(!is.na(stain)){
+if(stain != "unknown"){
   cat(paste("Annotation stain is set to", stain), sep = "\n")
   cat(paste("Loading", stain), sep = "\n")
   instdb <- spec.df[spec.df$spec == stain,]$db
   shhh(library(paste0(instdb), warn.conflicts = FALSE,quietly = TRUE,character.only = T))
+} else {
+  cat("Stain is not set!", sep = "\n")
 }
 
 
@@ -69,7 +72,6 @@ cl <- makeCluster(threads,type = "FORK")
 cat("Cluster started!", sep = "\n")
 
 setwd(dir)
-
 if(identical(tolower(paralogs), "f")){
     tab <- read.delim("blast.outfmt6",header = F,stringsAsFactors = F)
     if(nrow(tab) < 1){
@@ -81,6 +83,7 @@ if(identical(tolower(paralogs), "f")){
     pam <- read.delim("blast.tsv",header = F, stringsAsFactors = F)
     df <- bind_cols(tab,pam)
 }
+
 
 if(identical(tolower(paralogs), "t")){
   tab <- read.delim("blast.outfmt6",header = F,stringsAsFactors = F)
@@ -314,6 +317,27 @@ if(identical(test.gene, "nogene")){
       big.final$GC.content <- as.character(unlist(lapply(big.final$PAM.sequence, letter.freq)))
     }
 }
+
+if(stain != "unknown"){
+    if(tolower(protein.coding) == "f"){
+        big.final$gene.name <- mapIds(org.Sc.sgd.db,
+                                      keys = as.character(big.final$Locus),
+                                      column = "DESCRIPTION",
+                                      keytype = "ENSEMBL",
+                                      multiVals = "first")
+      
+    } else if(tolower(protein.coding) == "t"){
+      big.final$gene.name <- mapIds(org.Sc.sgd.db,
+                                    keys = as.character(big.final$gene.id),
+                                    column = "DESCRIPTION",
+                                    keytype = "ENSEMBL",
+                                    multiVals = "first")
+    }
+
+}
+
+
+
 
 write.csv(big.final, paste(prefix, "-results.csv", sep = ""))
 html.filename <- paste(files.dir, "/", prefix, "-output.html", sep = "")

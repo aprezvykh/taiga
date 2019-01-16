@@ -282,6 +282,16 @@ if [ "$protein_coding_only" = "F" ] || [ "$protein_coding_only" = "f" ];
 		fi
 fi
 
+
+if [[ -z "$stain"  ]]
+        then
+                echo "Annotation wil not working, species is not set"
+                echo "List of avallible species: yeast, mouse, human, rat, fly, worm"
+                stain="unknown"
+        fi
+
+
+
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
 echo GENOME FILE IS SET TO = "${genome}"
@@ -467,7 +477,7 @@ if [[ ! -z "$test_grna" ]]
 		$script_dir/./blastxml_to_tabular.py blast.xml > blast.outfmt6
 		blastxmlparser --threads $threads -n 'hit.score, hsp.evalue, hsp.qseq, hsp.midline' blast.xml > blast.tsv
 		RNAfold $testgrna_file --noPS | grep ". (" | awk '{print $3}' | sed 's/)//' > energies.txt
-		$script_dir/./parse_tsv_single_gRNA.R $(pwd) $annotation_file $prefix $threads $seed_mismatch $non_seed_mismatch $protein_coding
+		$script_dir/./parse_tsv_single_gRNA.R $(pwd) $annotation_file $prefix $threads $seed_mismatch $non_seed_mismatch $protein_coding $stain
 		echo "Done! Purging..."
 		rm $curr_exec_dir/blast.xml $curr_exec_dir/blast.tsv $curr_exec_dir/blast.outfmt6 $curr_exec_dir/energies.txt $curr_exec_dir/testgrna.fasta $curr_exec_dir/genome_cds.fasta $curr_exec_dir/genome_cds.fasta.fai
 		ls *.csv | parallel 'ssconvert {} {.}.xls'
@@ -606,7 +616,6 @@ RNAfold $final_spacers --noPS | grep "\\." | sed 's/[^ ]* //' | sed 's/)//' | se
 
 echo "Executing final R script!"
 echo "$script_dir/./parse_tsv.R $(pwd) $annotation_file $prefix $threads $seed_mismatch $non_seed_mismatch $protein_coding_only $test_gene $curr_exec_dir $script_dir $paralogs $stain"
-exit 0
 $script_dir/./parse_tsv.R $(pwd) $annotation_file $prefix $threads $seed_mismatch $non_seed_mismatch $protein_coding_only $test_gene $curr_exec_dir $script_dir $paralogs $stain
 echo "Done! Purging..."
 

@@ -20,9 +20,9 @@ threads <- args[9]
 seed.mismatch <- args[10]
 non.seed.mismatch <- args[11]
 protein.coding <- args[12]
+stain = args[13]
 
 debug = F
-
 if(debug == T){
   dir <- c("~/taiga.TESTING/")
   gtf.path <- c("~/git/taiga/data/genome.gtf")
@@ -35,6 +35,20 @@ if(debug == T){
   paralogs <- "F"
 }
 
+spec.df <- data.frame(db = c("org.Sc.sgd.db", "org.Mm.eg.db" ,"org.Hs.eg.db", "org.Rn.eg.db", "org.Dm.eg.db", "org.Ce.eg.db"),
+                      spec = c("yeast", "mouse", "human", "rat", "fly", "worm"),
+                      stringsAsFactors = F)
+
+if(stain != "unknown"){
+  cat(paste("Annotation stain is set to", stain), sep = "\n")
+  cat(paste("Loading", stain), sep = "\n")
+  instdb <- spec.df[spec.df$spec == stain,]$db
+  shhh(library(paste0(instdb), warn.conflicts = FALSE,quietly = TRUE,character.only = T))
+} else {
+  cat("Stain is not set!", sep = "\n")
+}
+
+
 seed.mismatch <- as.numeric(seed.mismatch)
 non.seed.mismatch <- as.numeric(non.seed.mismatch)
 ###
@@ -44,7 +58,7 @@ cat("Cluster started!", sep = "\n")
 
 setwd(dir)
 
-print(paste("Using", threads, "threads!"))
+cat(paste("Using", threads, "threads!"), sep = "\n")
 
 tab <- read.delim("blast.outfmt6",header = F,stringsAsFactors = F)
 pam <- read.delim("blast.tsv",header = F, stringsAsFactors = F)
@@ -114,7 +128,7 @@ get.loci <- function(x){
 }
 
 
-print("importing GTF...")
+cat("importing GTF...", sep = "\n")
 gtf <- as.data.frame(import(gtf.path))
 fasta <- read.delim("testgrna.fasta", header = F)
 energies <- read.table("energies.txt", header = F)
@@ -134,20 +148,20 @@ df$ee <- NULL
 
 mm.sum <- as.numeric(seed.mismatch + non.seed.mismatch)
 clusterExport(cl, "gtf")
-print("reconstructing cigar...")
+cat("reconstructing cigar...", sep = "\n")
 df$recon.cigar <- parApply(cl = cl, X = df, MARGIN = 1, FUN = reconstruct.cigar)
 df$recon.cigar <- gsub(" ", "X", df$recon.cigar)
-print("Counting mismatches...")
+cat("Counting mismatches...")
 
 df$total.mm <- unlist(lapply(df$recon.cigar, count.total.mismatches))
 #df <- df[df$total.mm < mm.sum,]
-print("getting mismatch position...")
+cat("getting mismatch position...", sep = "\n")
 df$mm.pos <- unlist(parLapply(cl = cl, X = df$recon.cigar,fun = get.mm.pos))
-print("parsing mismatch string...")
+cat("parsing mismatch string...", sep = "\n")
 df$val <- unlist(parLapply(cl = cl, X = df$mm.pos, fun = parse.mismatch.string))
-print("parsing annotation file...")
+cat("parsing annotation file...", sep = "\n")
 df$loc <- parApply(cl = cl, X = df, MARGIN = 1, FUN = get.loci)
-print("Constructing final data frame!")
+cat("Constructing final data frame!", sep = "\n")
 final.df <- data.frame()
 
 
@@ -184,6 +198,25 @@ names(final.df) <- c("gRNA.id", "chr", "evalue", "bitscore",
 final.df <- final.df[order(final.df$total.mismatch.N,decreasing = F),]
 final.df$Number.of.genes.with.full.match <- length(unique(final.df[final.df$cigar.string == "|||||||||||||||||||||||"]$Locus))
 final.df$Number.of.different.mutation.locations <- length(unique(final.df$cigar.string))
+
+if(stain != "unknown"){
+    if(tolower(protein.coding) == "f"){
+      big.final$gene.name <- mapIds(org.Sc.sgd.db,
+                                    keys = as.character(big.final$Locus),
+                                    column = "DESCRIPTION",
+                                    keytype = "ENSEMBL",
+                                    multiVals = "first")
+      
+    } else if(tolower(protein.coding) == "t"){
+      big.final$gene.name <- mapIds(org.Sc.sgd.db,
+                                    keys = as.character(big.final$gene.id),
+                                    column = "DESCRIPTION",
+                                    keytype = "ENSEMBL",
+                                    multiVals = "first")
+    }
+}
+
+
 
 write.csv(final.df, paste(prefix, "-single-gRNA-results.csv", sep = ""))
 system(paste("ssconvert ", prefix, "-single-gRNA-results.csv ", prefix, "-single-gRNA-results.xls 2> /dev/null", sep = ""))

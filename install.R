@@ -36,7 +36,7 @@ local({r <- getOption("repos")
        options(repos=r)
 })
 
-need.pack <- c("rtracklayer","stringr", "parallel", "plyr", "dplyr", "Biostrings", "ggplot2", "gridExtra", "xtable")
+need.pack <- c("rtracklayer","stringr", "parallel", "plyr", "dplyr", "Biostrings", "ggplot2", "gridExtra", "xtable", "AnnotationDbi")
 inst <- installed.packages()
 
 for (f in need.pack){
